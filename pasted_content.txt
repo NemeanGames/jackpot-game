@@ -1,0 +1,301 @@
+        <div className="mt-6 w-full flex flex-col gap-2 text-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs text-slate-400">Price to enter</div>
+              <div className="text-lg font-semibold">
+                ${priceToEnter}
+              </div>
+            </div>
+            <div className="flex gap-2 items-end">
+              <button
+                onClick={() => spin("manual")}
+                disabled={spinning || playerSpots === 0}
+                className={
+                  spinning || playerSpots === 0
+                    ? "bg-slate-800 text-slate-500 cursor-not-allowed px-4 py-2 rounded-2xl font-semibold shadow-md"
+                    : "bg-emerald-400 text-emerald-950 hover:bg-emerald-300 active:scale-[0.97] px-4 py-2 rounded-2xl font-semibold shadow-md"
+                }
+              >
+                {spinning ? "Spinning..." : "Spin"}
+              </button>
+              <button
+                onClick={resetBoard}
+                disabled={spinning}
+                className="px-3 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 text-xs transition disabled:opacity-40"
+              >
+                New board
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-slate-400 mt-1">
+            <div>
+              Points:{" "}
+              <span className="font-semibold text-slate-100">
+                {points}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPoints((p) => p + 100)}
+                className="px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 active:scale-[0.97] text-[11px]"
+              >
+                +100
+              </button>
+              <button
+                onClick={() => setPoints((p) => p + 500)}
+                className="px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 active:scale-[0.97] text-[11px]"
+              >
+                +500
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs mt-2">
+            <button
+              onClick={() => setAutoSpin((v) => !v)}
+              className={
+                autoSpin
+                  ? "px-3 py-1 rounded-full bg-emerald-300 text-emerald-900 border border-transparent shadow-sm"
+                  : "px-3 py-1 rounded-full bg-slate-900 text-slate-300 border border-slate-700 hover:bg-slate-800"
+              }
+            >
+              Auto 30s
+            </button>
+            <button
+              onClick={() => setBotSpinSingle((v) => !v)}
+              className={
+                botSpinSingle
+                  ? "px-3 py-1 rounded-full bg-sky-300 text-sky-900 border border-transparent shadow-sm"
+                  : "px-3 py-1 rounded-full bg-slate-900 text-slate-300 border border-slate-700 hover:bg-slate-800"
+              }
+            >
+              Bot cadence (1 spot)
+            </button>
+            <button
+              onClick={() => setShowEV((v) => !v)}
+              className={
+                showEV
+                  ? "px-3 py-1 rounded-full bg-amber-300 text-amber-900 border border-transparent shadow-sm"
+                  : "px-3 py-1 rounded-full bg-slate-900 text-slate-300 border border-slate-700 hover:bg-slate-800"
+              }
+            >
+              EV panel
+            </button>
+            <button
+              onClick={() => setEffectsOn((v) => !v)}
+              className={
+                effectsOn
+                  ? "px-3 py-1 rounded-full bg-fuchsia-400 text-fuchsia-950 border border-transparent shadow-sm"
+                  : "px-3 py-1 rounded-full bg-slate-900 text-slate-300 border border-slate-700 hover:bg-slate-800"
+              }
+            >
+              FX
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Right: Player list + stats */}
+      <div className="bg-slate-900/80 rounded-3xl p-5 shadow-[0_0_40px_rgba(15,23,42,0.9)] border border-slate-800 flex flex-col">
+        <div className="flex gap-2 mb-3 text-sm">
+          <button className="px-3 py-1.5 rounded-full bg-emerald-400 text-emerald-950 font-semibold text-xs">
+            Recent wins
+          </button>
+          <button className="px-3 py-1.5 rounded-full bg-slate-800 text-slate-200 text-xs">
+            My wins
+          </button>
+          <button className="px-3 py-1.5 rounded-full bg-slate-800 text-slate-200 text-xs">
+            My bets
+          </button>
+        </div>
+
+        <div className="text-xs text-slate-400 mb-2">Status</div>
+        <div className="text-sm bg-slate-950/80 rounded-2xl p-3 border border-slate-800 mb-3 min-h-[64px]">
+          {log}
+        </div>
+
+        {showEV && (
+          <div className="grid grid-cols-2 gap-3 text-xs mb-4">
+            <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 space-y-1">
+              <div className="font-semibold mb-1">Theoretical</div>
+              <div>Spots: {playerSpots}</div>
+              <div>Win chance: {(pWin * 100).toFixed(1)}%</div>
+              <div>EV / round: {theoEV.toFixed(1)} pts</div>
+            </div>
+            <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-3 space-y-1">
+              <div className="font-semibold mb-1">Session</div>
+              <div>Spins: {totalSpins}</div>
+              <div>Entries paid: {totalWagered}</div>
+              <div>Won: {totalWon}</div>
+              <div>
+                Net: {net} (
+                {totalSpins > 0
+                  ? `${realizedEV.toFixed(2)} avg/spin`
+                  : "0 avg/spin"}
+                )
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Player & bot rows */}
+        <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
+          <span>User</span>
+          <span className="w-20 text-right">Bet</span>
+        </div>
+        <div className="space-y-1 overflow-auto max-h-[260px] pr-1 text-sm">
+          {playerSpots > 0 && (
+            <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-emerald-500/15 border border-emerald-400/40">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-emerald-400 flex items-center justify-center text-xs font-bold text-emerald-950">
+                  U
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-medium">You</span>
+                  <span className="text-[11px] text-slate-400">
+                    Spots: {playerSpots}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right text-xs">
+                <div>
+                  ${((playerSpots * entryCost) / 100).toFixed(2)}
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  {(pWin * 100).toFixed(0)}% chance
+                </div>
+              </div>
+            </div>
+          )}
+
+          {Array.from(new Set(bots.map((slot) => botLetters[slot]))).map(
+            (initial) => {
+              if (!initial) return null;
+              const slotsOwned = bots.filter(
+                (slot) => botLetters[slot] === initial
+              ).length;
+              const bet = (slotsOwned * entryCost) / 100;
+              const chance = (slotsOwned / slotCount) * 100;
+              return (
+                <div
+                  key={initial}
+                  className="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-800/80 border border-slate-700"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-100">
+                      {initial}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium">Bot {initial}</span>
+                      <span className="text-[11px] text-slate-400">
+                        Spots: {slotsOwned}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right text-xs">
+                    <div>${bet.toFixed(2)}</div>
+                    <div className="text-[11px] text-slate-400">
+                      {chance.toFixed(0)}% chance
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+          )}
+
+          {/* Empty rows / waiting entries */}
+          {Array.from({
+            length: Math.max(0, slotCount - playerSpots - bots.length)
+          }).map((_, idx) => (
+            <div
+              key={`empty-${idx}`}
+              className="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-900 border border-slate-800"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-500">
+                  +
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-medium text-slate-400">
+                    Waiting for player...
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  const empties = slotLabels.filter(
+                    (s) => ownerFor[s] === "empty"
+                  );
+                  if (empties.length > 0) buySpot(empties[0]);
+                  else setLog("No empty spots left on this board.");
+                }}
+                className="px-3 py-1.5 rounded-xl bg-emerald-400 text-emerald-950 text-xs font-semibold hover:bg-emerald-300 active:scale-[0.97] disabled:opacity-40"
+                disabled={spinning}
+              >
+                Enter
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// -----------------------------------------------------------------------------
+// RewardWheelRiskHub: wrapper with tier switching
+// -----------------------------------------------------------------------------
+
+const RewardWheelRiskHub: React.FC = () => {
+  const [tier, setTier] = useState<RiskTier>("medium");
+  const config = RISK_CONFIG[tier];
+
+  return (
+    <div className="min-h-screen w-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-6xl mx-auto flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">
+              Reward Wheel vs Bots
+            </h1>
+            <p className="text-xs text-slate-400 mt-1">
+              Buy slices, let bots trickle in, and spin. Full boards auto-spin
+              and clear.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            {(
+              [
+                ["low", "Low"],
+                ["medium", "Medium"],
+                ["high", "High"]
+              ] as [RiskTier, string][]
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => setTier(value)}
+                className={
+                  tier === value
+                    ? "px-3 py-1.5 rounded-full bg-emerald-400 text-emerald-950 font-semibold"
+                    : "px-3 py-1.5 rounded-full bg-slate-800 text-slate-200 hover:bg-slate-700"
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <RewardWheelBoard key={tier} tier={tier} config={config} />
+
+        <div className="text-[10px] text-slate-500 text-center mt-2">
+          Entry cost and payout scale by tier. Bots are cosmetic opponents; EV
+          is shown so you can tune risk for your economy.
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RewardWheelRiskHub;
