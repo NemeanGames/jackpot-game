@@ -255,71 +255,6 @@ const RewardWheelBoard: React.FC<RewardWheelBoardProps> = ({ tier, config, userI
     return () => clearInterval(interval);
   }, [wheelFillTimeMs]);
 
-  // Auto-spin the wheel when it becomes full. This is triggered only when autoSpin is enabled.
-  useEffect(() => {
-    if (!autoSpin) return;
-    if (spinning) return;
-    // require at least one player spot to spin
-    if (playerSpots === 0) return;
-    const totalFilled = selected.length + bots.length;
-    // if board is not full yet, nothing to do
-    if (totalFilled < slotCount) return;
-    // avoid repeating full-board spin within the same round
-    if (fullBoardSpinId === roundId) return;
-    setFullBoardSpinId(roundId);
-    const timeout = setTimeout(() => {
-      spin("autoFull");
-    }, 600);
-    return () => clearTimeout(timeout);
-  }, [
-    autoSpin,
-    spinning,
-    playerSpots,
-    selected,
-    bots,
-    slotCount,
-    roundId,
-    fullBoardSpinId
-  ]);
-
-  // Auto-spin countdown. Drives the 'Next spin in' panel when autoSpin is enabled.
-  useEffect(() => {
-    const base = Math.ceil(wheelFillTimeMs / 1000);
-    setDevTimer(base);
-    // If autoSpin is off, only show a static countdown and do not trigger spins
-    if (!autoSpin) {
-      return;
-    }
-    let remaining = base;
-    const interval = setInterval(() => {
-      if (spinning) {
-        // Reset countdown when wheel is spinning
-        remaining = base;
-        setDevTimer(base);
-        return;
-      }
-      remaining -= 1;
-      if (remaining <= 0) {
-        remaining = base;
-        const totalFilled = selected.length + bots.length;
-        // Only auto-spin on partially filled boards when the player has bought spots
-        if (playerSpots > 0 && totalFilled < slotCount) {
-          spin("auto30");
-        }
-      }
-      setDevTimer(remaining);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [
-    autoSpin,
-    wheelFillTimeMs,
-    spinning,
-    playerSpots,
-    selected.length,
-    bots.length,
-    slotCount
-  ]);
-
   function animateTo(
     rotationDeg: number,
     durationMs: number,
@@ -391,8 +326,7 @@ const RewardWheelBoard: React.FC<RewardWheelBoardProps> = ({ tier, config, userI
     }
 
     const totalFilled = playerSpots + bots.length;
-    // When the board is full, only block manual spins. Autospins will be triggered separately.
-    if (totalFilled >= slotCount && source === "manual") {
+    if (totalFilled >= slotCount) {
       setLog("Board is full. Waiting for autonomous spin...");
       return;
     }
@@ -453,16 +387,16 @@ const RewardWheelBoard: React.FC<RewardWheelBoardProps> = ({ tier, config, userI
 
     setHasInteracted(true);
 
-    // Immediately apply the player's purchase without delay
-    const next = [...selected, slot];
-    setSelected(next);
-    setPoints((p) => p - entryCost);
-    setTotalWagered((w) => w + entryCost);
-    setLog(`Bought spot ${slot}. You now have ${next.length} spot(s).`);
+    const delayMs = 100 + Math.random() * 2900;
+    setLog(`Buying spot ${slot}...`);
 
-    // Stagger bot joins with a small delay to simulate natural pacing
-    const botDelayMs = 150 + Math.random() * 850;
     setTimeout(() => {
+      const next = [...selected, slot];
+      setSelected(next);
+      setPoints((p) => p - entryCost);
+      setTotalWagered((w) => w + entryCost);
+      setLog(`Bought spot ${slot}. You now have ${next.length} spot(s).`);
+
       setBots((prevBots) => {
         const taken = new Set<number>([...prevBots, ...next]);
         const empties = slotLabels.filter((s) => !taken.has(s));
@@ -500,7 +434,7 @@ const RewardWheelBoard: React.FC<RewardWheelBoardProps> = ({ tier, config, userI
         setBotLetters((prev) => ({ ...prev, ...newLetters }));
         return updated;
       });
-    }, botDelayMs);
+    }, delayMs);
   }
 
   function pointToSlot(clientX: number, clientY: number): number | null {
@@ -598,24 +532,14 @@ const RewardWheelBoard: React.FC<RewardWheelBoardProps> = ({ tier, config, userI
                       const color = sliceColors[slot - 1];
 
                       return (
-                        // Make each slice group clickable for improved reactivity
-                        <g
-                          key={slot}
-                          className="cursor-pointer"
-                          onClick={() => {
-                            if (ownerFor[slot] === "empty") {
-                              buySpot(slot);
-                            }
-                          }}
-                        >
+                        <g key={slot}>
                           <path
                             d={path}
                             fill={color}
                             stroke="#000"
                             strokeWidth="2"
                             opacity={owner === "empty" ? 0.3 : 1}
-                            // Toggle drop-shadow based on effectsOn flag
-                            filter={effectsOn ? "url(#shadow)" : undefined}
+                            filter="url(#shadow)"
                           />
                           <circle
                             cx={200 + 110 * Math.cos((startDeg + anglePer / 2) * (Math.PI / 180))}
